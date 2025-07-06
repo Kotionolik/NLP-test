@@ -1,0 +1,149 @@
+<html>
+<head>
+    <title>Furniture Product Extractor</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        h1 { color: #2c3e50; text-align: center; }
+        #form-section { margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        button:hover { background: #2980b9; }
+        #loading {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+        #results {
+            display: none;
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .product-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .error { color: #e74c3c; margin-top: 10px; }
+        .success { color: #27ae60; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Furniture Product Extractor</h1>
+
+        <section id="form-section">
+            <div class="form-group">
+                <input type="url" id="url-input"
+                    placeholder="https://example.com/furniture"
+                    autocomplete="off">
+            </div>
+            <button id="extract-btn">Extract Products</button>
+            <div id="loading">Processing... ⏳</div>
+            <div id="message" class="error"></div>
+        </section>
+
+        <section id="results">
+            <h2>Extracted Products</h2>
+            <div id="product-list"></div>
+            <p id="result-count"></p>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const extractBtn = document.getElementById('extract-btn');
+            const urlInput = document.getElementById('url-input');
+            const loading = document.getElementById('loading');
+            const message = document.getElementById('message');
+            const results = document.getElementById('results');
+            const productList = document.getElementById('product-list');
+            const resultCount = document.getElementById('result-count');
+
+            extractBtn.addEventListener('click', async function() {
+                const url = urlInput.value.trim();
+
+                message.textContent = '';
+                message.className = 'error';
+                results.style.display = 'none';
+
+                if (!url) {
+                    message.textContent = 'Please enter a valid URL';
+                    return;
+                }
+
+                try {
+                    loading.style.display = 'block';
+
+                    const response = await fetch('/process', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ url: url })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.error) {
+                        message.textContent = `Error: ${data.error}`;
+                        return;
+                    }
+
+                    productList.innerHTML = '';
+                    if (data.products && data.products.length > 0) {
+                        data.products.forEach(product => {
+                            const productDiv = document.createElement('div');
+                            productDiv.className = 'product-item';
+                            productDiv.textContent = product;
+                            productList.appendChild(productDiv);
+                        });
+                        resultCount.textContent = `Found ${data.products.length} products`;
+                        resultCount.className = 'success';
+                        results.style.display = 'block';
+                    } else {
+                        message.textContent = 'No furniture products found';
+                        message.className = 'error';
+                    }
+
+                } catch (error) {
+                    message.textContent = `Network error: ${error.message}`;
+                } finally {
+                    loading.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
